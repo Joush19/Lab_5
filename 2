@@ -1,0 +1,36 @@
+import serial
+import RPi.GPIO as GPIO
+import time
+
+motor1_pin = 17
+motor2_pin = 18
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(motor1_pin, GPIO.OUT)
+GPIO.setup(motor2_pin, GPIO.OUT)
+
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+ser.flush()
+
+try:
+    while True:
+        if ser.in_waiting > 0:
+            message = ser.readline().decode('utf-8').rstrip()
+            
+            if message == "motor1":
+                GPIO.output(motor1_pin, GPIO.HIGH)
+                time.sleep(1)
+                GPIO.output(motor1_pin, GPIO.LOW)
+
+            elif message == "motor2":
+                GPIO.output(motor2_pin, GPIO.HIGH)
+                time.sleep(1)
+                GPIO.output(motor2_pin, GPIO.LOW)
+
+except KeyboardInterrupt:
+    print("Saliendo...")
+
+finally:
+    ser.close()
+    GPIO.cleanup()
+    print("Puerto serial cerrado y GPIO limpio.")
