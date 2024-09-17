@@ -1,0 +1,45 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include "inc/hw_memmap.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
+
+#define SWITCH1_PIN GPIO_PIN_0  
+#define SWITCH2_PIN GPIO_PIN_1  
+
+void UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count);
+
+int main(void) {
+    SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+    GPIOPinConfigure(GPIO_PA0_U0RX);
+    GPIOPinConfigure(GPIO_PA1_U0TX);
+    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
+
+
+    GPIOPinTypeGPIOInput(GPIO_PORTA_BASE, SWITCH1_PIN | SWITCH2_PIN);
+    GPIOPadConfigSet(GPIO_PORTA_BASE, SWITCH1_PIN | SWITCH2_PIN, GPIO_STRENGTH_2MA, GPIO_PIN_TYPE_STD_WPU);
+
+    while (1) {
+        if (GPIOPinRead(GPIO_PORTA_BASE, SWITCH1_PIN) == 0) {
+            UARTSend((uint8_t *)"motor1", 6); 
+            SysCtlDelay(SysCtlClockGet() / 3);  
+        }
+        if (GPIOPinRead(GPIO_PORTA_BASE, SWITCH2_PIN) == 0) {
+            UARTSend((uint8_t *)"motor2", 6); 
+            SysCtlDelay(SysCtlClockGet() / 3);
+        }
+    }
+}
+
+void UARTSend(const uint8_t *pui8Buffer, uint32_t ui32Count) {
+    while (ui32Count--) {
+        UARTCharPut(UART0_BASE, *pui8Buffer++);
+    }
+}
